@@ -45,6 +45,7 @@
 #include <NtpClientLib.h>             // To timestamp RFID scans we get Unix Time from NTP Server
 #include <TimeLib.h>                  // Library for converting epochtime to a date
 #include <WiFiUdp.h>                  // Library for manipulating UDP packets which is used by NTP Client to get Timestamps
+#include <PubSubClient.h>             // Library to connect to mqtt server
 
 #ifdef ESP8266
 extern "C" {
@@ -68,6 +69,17 @@ bool doEnableWifi = false;
 int wifiTimeout = -1;
 unsigned long wiFiUptimeMillis = 0;
 char * deviceHostname = NULL;
+
+// MQTT
+WiFiClient wifiClient;
+IPAddress MQTTserver();
+PubSubClient mqttClient(wifiClient);
+char *mqttHost = NULL;
+uint16_t mqttPort = 0;
+bool mqttConnected = false;
+char *mqttTopic = NULL;
+char *mqttUser = NULL;
+char *mqttPwd = NULL;
 
 int readerType;
 int relayPin;
@@ -554,6 +566,9 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
                                         }
                                         logFile.close();
                                 }
+                                else {
+                                  ws.textAll("{\"type\":\"result\",\"resultof\":\"latestlog\",\"result\": false}");
+                                }
                         }
                         else if (strcmp(command, "scan")  == 0) {
                                 WiFi.scanNetworksAsync(printScanResult, true);
@@ -725,6 +740,33 @@ void printScanResult(int networksFound) {
         WiFi.scanDelete();
 }
 
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  if (length == 0) {
+    return;
+  }
+}
+
+void mqttConnect() {
+  if (mqttHost != NULL && mqttPort != 0 && mqttTopic != NULL && !mqttClient.connected() ) {
+    Serial.print(F("[ INFO ] Trying to connect to MQTT server : "));
+    //setCallback();
+    unsigned char retries = 0;
+    mqttConnected = false;
+    while (mqttConnected == false && retries < 20) {
+      mqttConnected = mqttClient.connect("ESP-RFID", mqttUser, mqttPwd);
+      retries++;
+      delay(1000);
+      Serial.print(".");
+    }
+    if (mqttConnected == true) {
+      Serial.println(F(" connected to mqttServer"));
+    } else {
+      Serial.println(F(" MQTT connection error"));
+    }
+  }
+}
+
+
 bool loadConfiguration() {
         File configFile = SPIFFS.open("/auth/config.json", "r");
         if (!configFile) {
@@ -819,7 +861,27 @@ bool loadConfiguration() {
         }
         NTP.begin(ntpserver, timeZone);
         NTP.setInterval(ntpinter * 60); // Poll every x minutes
-
+        // mqtt
+        if (mqttHost != NULL) {
+            free((void *)mqttHost);
+        }
+        mqttHost = strdup(json["mqtthost"]);
+        mqttPort = json["mqttport"];
+        if (mqttTopic != NULL) {
+            free((void *)mqttTopic);
+        }
+        mqttTopic = strdup(json["mqtttopic"]);
+        if (mqttUser != NULL) {
+            free((void *)mqttUser);
+        }
+        mqttUser = strdup(json["mqttuser"]);
+        if (mqttPwd != NULL) {
+            free((void *)mqttPwd);
+        }
+        mqttPwd = strdup(json["mqttpwd"]);
+        mqttClient.disconnect();
+        mqttClient.setServer(mqttHost, mqttPort);
+        mqttConnect();
         return true;
 }
 

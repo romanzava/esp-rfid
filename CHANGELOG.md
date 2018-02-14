@@ -1,6 +1,25 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+#### Added
+- MQTT to main branch.
+- Access column to logs for the information, if the access was granted or not @romanzava
+- Travis CI
+- NProgress.js
+- Glyphicons redirection for SPIFFS's limited 32 char filename.
+- WebSocket emulator for rapid web page development. (This require node.js)
+- Gulp script for auto css/js file concat and gzip
+- Offline static web page development capability (enter "neo" as admin password for local testing)
+
+#### Changed
+- Hardcoded FooTable Add/Edit text
+- Platformio target to include many more ESP8266 module and development board.
+- Clean and beautify main.cpp @nardev
+- Minor cosmetic changes
+- Javascript loading moved to end of the html
+- index.html for more modern look and feel.
+
 ## [0.4alpha] - 2018-01-21
 #### Added
 - Initial Wiegand Reader (RFID Reader) support. - @nardev
@@ -185,7 +204,7 @@ All notable changes to this project will be documented in this file.
 - Logging In Authorization is now done via Async XMR Request. Browsers does not complain about it being synchronous anymore. (Tested with Chrome and Firefox)
 
 #### Changed
-- Inform web user while pages are loading https://www.nngroup.com/articles/response-times-3-important-limits/ 
+- Inform web user while pages are loading https://www.nngroup.com/articles/response-times-3-important-limits/
 - Configuration rutine
 - Seperate settings page and Users specific page
 
