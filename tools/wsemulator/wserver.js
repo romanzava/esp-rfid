@@ -50,7 +50,7 @@ var networks = {
 }
 
 var latestlog = {
-  "type": "latestlog",
+  "command": "latestlog",
   "list": [
     {
       "timestamp": 1518198383,
@@ -279,27 +279,42 @@ var users = [{
     }
 ]
 
-var configfile = {
-	"command":"configfile",
-	"bssid":"8a:e6:63:a8:15",
-	"ssid":"Home Router",
-	"wmode":"0",
-	"pswd":"33355555",
-	"readerType":"0",
-	"wgd0pin":"4",
-	"wgd1pin":"5",
-	"sspin":"15",
-	"rfidgain":"32",
-	"rtype":"1",
-	"rpin":"16",
-	"rtime":"300",
-	"ntpserver":"pool.ntp.org",
-	"ntpinterval":"30",
-	"timezone":"0",
-	"hostnm":"esp-rfid",
-	"disable_wifi_after_seconds":"0",
-	"auto_restart_interval_seconds":"86400",
-	"adminpwd":"admin"
+var configfile =  {
+	"command": "configfile",
+	"network": {
+		"bssid": "aa:bb:Cc:dd:ee",
+		"ssid": "SMC",
+		"wmode": "0",
+		"pswd": "33355555",
+		"offtime": "180"
+	},
+	"hardware": {
+		"readerType": "0",
+		"wgd0pin": "4",
+		"wgd1pin": "5",
+		"sspin": "15",
+		"rfidgain": "32",
+		"rtype": "1",
+		"rpin": "16",
+		"rtime": "300"
+	},
+	"general": {
+		"hostnm": "esp-rfid",
+		"restart": "86400",
+		"pswd": "admin"
+	},
+	"mqtt": {
+		"host": "",
+		"port": "",
+		"topic": "",
+		"user": "",
+		"pswd": ""
+	},
+	"ntp": {
+		"ntpserver": "pool.ntp.org",
+		"ntpinterval": "30",
+		"timezone": "0"
+	}
 };
 
 function remove(uidKey) {
@@ -362,7 +377,7 @@ function sendStatus() {
         "heap": 30000,
         "chipid": "emu413",
 		"cpu": "80/160",
-		"availsize": 55555,
+		"availsize": 555555,
 		"availspiffs": 445555,
 		"spiffssize": 888888,
 		"uptime": "1 Day 6 Hours",

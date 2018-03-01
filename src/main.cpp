@@ -41,17 +41,25 @@
 #include <FS.h>                       // SPIFFS Library for storing web files to serve to web browsers
 #include <ESPAsyncTCP.h>              // Async TCP Library is mandatory for Async Web Server
 #include <ESPAsyncWebServer.h>        // Async Web Server with built-in WebSocket Plug-in
-// #include <SPIFFSEditor.h>             // This creates a web page on server which can be used to edit text based files.
 #include <NtpClientLib.h>             // To timestamp RFID scans we get Unix Time from NTP Server
 #include <TimeLib.h>                  // Library for converting epochtime to a date
 #include <WiFiUdp.h>                  // Library for manipulating UDP packets which is used by NTP Client to get Timestamps
 #include <PubSubClient.h>             // Library to connect to mqtt server
 
-// Include the header file we create with gulp
+// Include the header files we create with gulp
 #include "glyphicons-halflings-regular.woff.gz.h"
-#include "index.html.gz.h"
 #include "required.css.gz.h"
 #include "required.js.gz.h"
+#include "esprfid.js.gz.h"
+
+#include "index.html.gz.h"
+#include "login.html.gz.h"
+
+#include "status.htm.gz.h"
+#include "users.htm.gz.h"
+#include "log.htm.gz.h"
+#include "network.htm.gz.h"
+#include "hardware.htm.gz.h"
 
 #ifdef ESP8266
 extern "C" {
@@ -61,7 +69,7 @@ extern "C" {
 
 // Variables for whole scope
 const char* http_username = "admin";
-char * http_pass = NULL;
+char * http_pass = "admin";
 unsigned long previousMillis = 0;
 unsigned long previousLoopMillis = 0;
 unsigned long cooldown = 0;
@@ -70,6 +78,8 @@ bool activateRelay = false;
 bool inAPMode = false;
 bool isWifiConnected = false;
 int autoRestartIntervalSeconds = 0;
+// Variable to hold the last modification datetime
+char last_modified[50];
 
 bool wifiDisabled = true;
 bool doDisableWifi = false;
@@ -402,13 +412,13 @@ void ShowMFRC522ReaderDetails() {
 }
 
 void LogLatest(String uid, String username, int acctype) {
-        File logFile = SPIFFS.open("/auth/latestlog.json", "r");
+        File logFile = SPIFFS.open("/latestlog.json", "r");
         if (!logFile) {
                 // Can not open file create it.
-                File logFile = SPIFFS.open("/auth/latestlog.json", "w");
+                File logFile = SPIFFS.open("/latestlog.json", "w");
                 DynamicJsonBuffer jsonBuffer3;
                 JsonObject& root = jsonBuffer3.createObject();
-                root["type"] = "latestlog";
+                root["command"] = "latestlog";
                 JsonArray& list = root.createNestedArray("list");
                 root.printTo(logFile);
                 logFile.close();
@@ -427,7 +437,7 @@ void LogLatest(String uid, String username, int acctype) {
                         if ( list.size() >= 15 ) {
                                 list.remove(0);
                         }
-                        File logFile = SPIFFS.open("/auth/latestlog.json", "w");
+                        File logFile = SPIFFS.open("/latestlog.json", "w");
                         DynamicJsonBuffer jsonBuffer5;
                         JsonObject& item = jsonBuffer5.createObject();
                         item["uid"] = uid;
@@ -476,12 +486,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
                                 SPIFFS.remove(filename);
                         }
                         else if (strcmp(command, "configfile")  == 0) {
-                                File f = SPIFFS.open("/auth/config.json", "w+");
+                                File f = SPIFFS.open("/config.json", "w+");
                                 if (f) {
                                         root.prettyPrintTo(f);
                                         //f.print(msg);
                                         f.close();
-                                        ESP.reset();
+                                        ESP.restart();
                                 }
                         }
                         else if (strcmp(command, "userlist")  == 0) {
@@ -508,7 +518,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
                                 previousMillis = millis();
                         }
                         else if (strcmp(command, "latestlog")  == 0) {
-                                File logFile = SPIFFS.open("/auth/latestlog.json", "r");
+                                File logFile = SPIFFS.open("/latestlog.json", "r");
                                 if (logFile) {
                                         size_t len = logFile.size();
                                         AsyncWebSocketMessageBuffer * buffer = ws.makeBuffer(len); //  creates a buffer (len + 1) for you.
@@ -534,7 +544,7 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
                                 sendTime();
                         }
                         else if (strcmp(command, "getconf")  == 0) {
-                                File configFile = SPIFFS.open("/auth/config.json", "r");
+                                File configFile = SPIFFS.open("/config.json", "r");
                                 if (configFile) {
                                         size_t len = configFile.size();
                                         AsyncWebSocketMessageBuffer * buffer = ws.makeBuffer(len); //  creates a buffer (len + 1) for you.
@@ -741,7 +751,7 @@ void mqttConnect() {
 
 
 bool loadConfiguration() {
-        File configFile = SPIFFS.open("/auth/config.json", "r");
+        File configFile = SPIFFS.open("/config.json", "r");
         if (!configFile) {
                 Serial.println(F("[ WARN ] Failed to open config file"));
                 return false;
@@ -763,33 +773,40 @@ bool loadConfiguration() {
         Serial.println(F("[ INFO ] Config file found"));
         json.prettyPrintTo(Serial);
         Serial.println();
+
+        JsonObject& network = json["network"];
+        JsonObject& hardware = json["hardware"];
+        JsonObject& general = json["general"];
+        JsonObject& mqtt = json["mqtt"];
+        JsonObject& ntp = json["ntp"];
+
         Serial.print(F("[ INFO ] Trying to setup RFID Hardware :"));
-        readerType = json["readerType"];
+        readerType = hardware["readerType"];
 
         if ( readerType == 1 ) {
-                int wgd0pin = json["wgd0pin"];
-                int wgd1pin = json["wgd1pin"];
+                int wgd0pin = hardware["wgd0pin"];
+                int wgd1pin = hardware["wgd1pin"];
                 Serial.println(F("Wiegand"));
                 setupWiegandReader(wgd0pin, wgd1pin); // also some other settings like weather to use keypad or not, LED pin, BUZZER pin, Wiegand 26/34 version
         } else if ( readerType == 0 ) {
                 int rfidss = 15;
-                if (json.containsKey("sspin")) {
-                        rfidss = json["sspin"];
+                if (hardware.containsKey("sspin")) {
+                        rfidss = hardware["sspin"];
                 }
-                int rfidgain = json["rfidgain"];
+                int rfidgain = hardware["rfidgain"];
                 Serial.println(F("MFRC522"));
                 setupMFRC522Reader(rfidss, rfidgain);
         }
 
-        const char * l_hostname = json["hostnm"];
+        const char * l_hostname = general["hostnm"];
 
-        autoRestartIntervalSeconds = json["auto_restart_interval_seconds"].as<int>();
-        wifiTimeout = json["disable_wifi_after_seconds"].as<int>();
+        autoRestartIntervalSeconds = general["restart"].as<int>();
+        wifiTimeout = network["offtime"].as<int>();
 
         free(deviceHostname);
         deviceHostname = strdup(l_hostname);
 
-        const char * bssidmac = json["bssid"];
+        const char * bssidmac = network["bssid"];
         byte bssid[6];
         parseBytes(bssidmac, ':', bssid, 6, 16);
 
@@ -803,21 +820,21 @@ bool loadConfiguration() {
         // Add Web Server service to mDNS
         MDNS.addService("http", "tcp", 80);
 
-        const char * ntpserver = json["ntpserver"];
-        int ntpinter = json["ntpinterval"];
-        timeZone = json["timezone"];
+        const char * ntpserver = ntp["ntpserver"];
+        int ntpinter = ntp["ntpinterval"];
+        timeZone = ntp["timezone"];
 
-        activateTime = json["rtime"];
-        relayPin = json["rpin"];
-        relayType = json["rtype"];
+        activateTime = hardware["rtime"];
+        relayPin = hardware["rpin"];
+        relayType = hardware["rtype"];
         pinMode(relayPin, OUTPUT);
         digitalWrite(relayPin, relayType);
 
-        const char * ssid = json["ssid"];
-        const char * password = json["pswd"];
-        int wmode = json["wmode"];
+        const char * ssid = network["ssid"];
+        const char * password = network["pswd"];
+        int wmode = network["wmode"];
 
-        http_pass = strdup(json["adminpwd"]);
+        http_pass = strdup(general["pswd"]);
 
         // Serve confidential files in /auth/ folder with a Basic HTTP authentication
         // server.serveStatic("/auth/", SPIFFS, "/auth/").setAuthentication("admin", adminpass);
@@ -838,20 +855,20 @@ bool loadConfiguration() {
         if (mqttHost != NULL) {
             free((void *)mqttHost);
         }
-        mqttHost = strdup(json["mqtthost"]);
-        mqttPort = json["mqttport"];
+        mqttHost = strdup(mqtt["host"]);
+        mqttPort = mqtt["port"];
         if (mqttTopic != NULL) {
             free((void *)mqttTopic);
         }
-        mqttTopic = strdup(json["mqtttopic"]);
+        mqttTopic = strdup(mqtt["topic"]);
         if (mqttUser != NULL) {
             free((void *)mqttUser);
         }
-        mqttUser = strdup(json["mqttuser"]);
+        mqttUser = strdup(mqtt["user"]);
         if (mqttPwd != NULL) {
             free((void *)mqttPwd);
         }
-        mqttPwd = strdup(json["mqttpwd"]);
+        mqttPwd = strdup(mqtt["pswd"]);
         mqttClient.disconnect();
         mqttClient.setServer(mqttHost, mqttPort);
         mqttConnect();
@@ -902,45 +919,190 @@ void setupWebServer() {
   // Inspect impact on memory, firmware size.
 
   server.on("/fonts/glyphicons-halflings-regular.woff", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
     // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
     AsyncWebServerResponse * response = request->beginResponse_P(200, "font/woff", glyphicons_halflings_regular_woff_gz, glyphicons_halflings_regular_woff_gz_len);
     // Tell the browswer the contemnt is Gzipped
     response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
     request->send(response);
+}
   });
 
   server.on("/css/required.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
     // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
     AsyncWebServerResponse * response = request->beginResponse_P(200, "text/css", required_css_gz, required_css_gz_len);
     // Tell the browswer the contemnt is Gzipped
     response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
     request->send(response);
+}
   });
 
   server.on("/js/required.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
     // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
     AsyncWebServerResponse * response = request->beginResponse_P(200, "text/javascript", required_js_gz, required_js_gz_len);
     // Tell the browswer the contemnt is Gzipped
     response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
     request-> send(response);
+}
+  });
+
+    server.on("/js/esprfid.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
+    // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
+    AsyncWebServerResponse * response = request->beginResponse_P(200, "text/javascript", esprfid_js_gz, esprfid_js_gz_len);
+    // Tell the browswer the contemnt is Gzipped
+    response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
+    request-> send(response);
+}
   });
 
   server.on("/index.html", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
     // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
     AsyncWebServerResponse * response = request->beginResponse_P(200, "text/html", index_html_gz, index_html_gz_len);
     // Tell the browswer the contemnt is Gzipped
     response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
     request->send(response);
+    }  
   });
+
+    server.on("/status.htm", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
+    // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
+    AsyncWebServerResponse * response = request->beginResponse_P(200, "text/html", status_htm_gz, status_htm_gz_len);
+    // Tell the browswer the contemnt is Gzipped
+    response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
+    request->send(response);
+    }  
+  });
+
+        server.on("/hardware.htm", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
+    // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
+    AsyncWebServerResponse * response = request->beginResponse_P(200, "text/html", hardware_htm_gz, hardware_htm_gz_len);
+    // Tell the browswer the contemnt is Gzipped
+    response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
+    request->send(response);
+    }  
+  });
+
+        server.on("/users.htm", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
+    // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
+    AsyncWebServerResponse * response = request->beginResponse_P(200, "text/html", users_htm_gz, users_htm_gz_len);
+    // Tell the browswer the contemnt is Gzipped
+    response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
+    request->send(response);
+    }  
+  });
+
+                server.on("/log.htm", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
+    // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
+    AsyncWebServerResponse * response = request->beginResponse_P(200, "text/html", log_htm_gz, log_htm_gz_len);
+    // Tell the browswer the contemnt is Gzipped
+    response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
+    request->send(response);
+    }  
+  });
+                                server.on("/network.htm", HTTP_GET, [](AsyncWebServerRequest * request) {
+        // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
+    // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
+    AsyncWebServerResponse * response = request->beginResponse_P(200, "text/html", network_htm_gz, network_htm_gz_len);
+    // Tell the browswer the contemnt is Gzipped
+    response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
+    request->send(response);
+    }  
+  });
+
+
+    server.on("/login.html", HTTP_GET, [](AsyncWebServerRequest * request) {
+            // Check if the client already has the same version and respond with a 304 (Not modified)
+    if (request->header("If-Modified-Since").equals(last_modified)) {
+        request->send(304);
+ 
+    } else {
+    // Dump the byte array in PROGMEM with a 200 HTTP code (OK)
+    AsyncWebServerResponse * response = request->beginResponse_P(200, "text/html", login_html_gz, login_html_gz_len);
+    // Tell the browswer the contemnt is Gzipped
+    response->addHeader("Content-Encoding", "gzip");
+            // And set the last-modified datetime so we can check if we need to send it again next time or not
+        response->addHeader("Last-Modified", last_modified);
+    request->send(response);
+}
+  });
+
 
   // HTTP basic authentication
 server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
   if(!request->authenticate(http_username, http_pass))
       return request->requestAuthentication();
-  request->send(200, "text/plain", "Login Success!");
+  request->send(200, "text/plain", "Success");
 });
 
-  server.rewrite("/", "/index.html");
+  server.rewrite("/", "/login.html");
 
   // Start Web Server
   server.begin();
@@ -948,6 +1110,9 @@ server.on("/login", HTTP_GET, [](AsyncWebServerRequest *request){
 
 // Set things up
 void setup() {
+        // Populate the last modification date based on build datetime
+        sprintf(last_modified, "%s %s GMT", __DATE__, __TIME__);
+
         Serial.begin(115200);
         Serial.println();
         Serial.println(F("[ INFO ] ESP RFID v0.5"));
