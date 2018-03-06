@@ -8,7 +8,7 @@ var htmlmin = require('gulp-htmlmin');
 var uglify = require('gulp-uglify');
 var pump = require('pump');
 
-gulp.task('esprfidjs', function (cb) {
+gulp.task('esprfidjsminify', function (cb) {
   pump([
         gulp.src('../../src/websrc/js/esprfid.js'),
         uglify(),
@@ -18,15 +18,17 @@ gulp.task('esprfidjs', function (cb) {
     );
 });
 
-gulp.task('esprfidjsgz', ["esprfidjs"], function() {
-    gulp.src('../../src/websrc/gzipped/js/esprfid.js')
+gulp.task("esprfidjsgz", ["esprfidjsminify"], function() {
+    return gulp.src("../../src/websrc/gzipped/js/esprfid.js")
         .pipe(gzip({
             append: true
         }))
-        .pipe(gulp.dest('../../src/websrc/gzipped/js/'));
+    .pipe(gulp.dest('../../src/websrc/gzipped/js/'));
+});
 
+gulp.task('esprfidjsgzh', ["esprfidjsgz"] , function() {
     var source = "../../src/websrc/gzipped/js/" + "esprfid.js.gz";
-    var destination = "../../src/" + "esprfid.js.gz.h";
+    var destination = "../../src/webh/" + "esprfid.js.gz.h";
  
     var wstream = fs.createWriteStream(destination);
     wstream.on('error', function (err) {
@@ -48,10 +50,12 @@ gulp.task('esprfidjsgz', ["esprfidjs"], function() {
     wstream.end();
 });
 
+
+
 gulp.task("scripts", ["scripts-concat"], function() {
 
     var source = "../../src/websrc/gzipped/js/" + "required.js.gz";
-    var destination = "../../src/" + "required.js.gz.h";
+    var destination = "../../src/webh/" + "required.js.gz.h";
  
     var wstream = fs.createWriteStream(destination);
     wstream.on('error', function (err) {
@@ -74,8 +78,8 @@ gulp.task("scripts", ["scripts-concat"], function() {
 	
 });
 
-gulp.task('scripts-concat', ["esprfidjsgz"], function() {
-    return gulp.src(['../../src/websrc/js/jquery-1.12.4.min.js', '../../src/websrc/js/bootstrap-3.3.7.min.js', '../../src/websrc/js/footable-3.1.6.min.js'])
+gulp.task('scripts-concat', ["esprfidjsgzh"], function() {
+    return gulp.src(['../../src/websrc/3rdparty/js/jquery-1.12.4.min.js', '../../src/websrc/3rdparty/js/bootstrap-3.3.7.min.js', '../../src/websrc/3rdparty/js/footable-3.1.6.min.js'])
         .pipe(concat({
             path: 'required.js',
             stat: {
@@ -92,7 +96,7 @@ gulp.task('scripts-concat', ["esprfidjsgz"], function() {
 
 
 gulp.task('styles-concat', function() {
-    return gulp.src(['../../src/websrc/css/bootstrap-3.3.7.min.css', '../../src/websrc/css/footable.bootstrap-3.1.6.min.css', '../../src/websrc/css/sidebar.css'])
+    return gulp.src(['../../src/websrc/3rdparty/css/bootstrap-3.3.7.min.css', '../../src/websrc/3rdparty/css/footable.bootstrap-3.1.6.min.css', '../../src/websrc/3rdparty/css/sidebar.css'])
         .pipe(concat({
             path: 'required.css',
             stat: {
@@ -111,7 +115,7 @@ gulp.task('styles-concat', function() {
 gulp.task("styles", ["styles-concat"], function() {
 
     var source = "../../src/websrc/gzipped/css/" + "required.css.gz";
-    var destination = "../../src/" + "required.css.gz.h";
+    var destination = "../../src/webh/" + "required.css.gz.h";
  
     var wstream = fs.createWriteStream(destination);
     wstream.on('error', function (err) {
@@ -136,7 +140,8 @@ gulp.task("styles", ["styles-concat"], function() {
 
 
 gulp.task("fontgz", function() {
-	return gulp.src("../../src/websrc/fonts/*.*")
+	return gulp.src("../../src/websrc/3rdparty/fonts/*.*")
+	.pipe(gulp.dest("../../src/websrc/fonts/"))
         .pipe(gzip({
             append: true
         }))
@@ -147,7 +152,7 @@ gulp.task("fonts", ["fontgz"], function() {
     return gulp.src("../../src/websrc/gzipped/fonts/*.*")
         .pipe(flatmap(function(stream, file) {
 			var filename = path.basename(file.path);
-            var wstream = fs.createWriteStream("../../src/" + filename + ".h");
+            var wstream = fs.createWriteStream("../../src/webh/" + filename + ".h");
             wstream.on("error", function(err) {
                 gutil.log(err);
             });
@@ -190,7 +195,7 @@ gulp.task("htmls", ["htmlsgz"], function() {
     return gulp.src("../../src/websrc/gzipped/*.gz")
         .pipe(flatmap(function(stream, file) {
             var filename = path.basename(file.path);
-            var wstream = fs.createWriteStream("../../src/" + filename + ".h");
+            var wstream = fs.createWriteStream("../../src/webh/" + filename + ".h");
             wstream.on("error", function(err) {
                 gutil.log(err);
             });

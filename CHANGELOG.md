@@ -3,6 +3,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 #### Added
+- [webui] Factory reset within Web UI.
+
+#### Changed
+- [webui] Changes suggested from Codacy.
+
+## [0.5hotfix1] - 2018-03-06
+#### Added
+- [firmware] **!!!! Breaking Change !!!!** Factory reset on boot if GPIO-16 is LOW or SPIFFS is corrupted. Make changes accordingly.
+- [webui] Touch detect on touch enabled devices in order to open/close sidebar on swipe.
+- [webui] Logout is now live (this is actually a dirty hack);
+
+#### Fixed
+- [dev tools] - Websocket emulator time was static
+- [firmware] #68 NTP functions cause Exception 9 and ESP crashes
+
+#### Changed
+- [webui] Embarrassing multiple HTM pages now reduced to one.
+- [webui] Better representing of device and browser times on NTP settings.
+- [webui] Prevent closing restore modal until it is finished.
+- [firmware] Refactored NTP.
+
+#### Removed
+- [webui] Removed GPIO-16 options due to it is being used for Factory Reset
+- [firmware] Drop usage of NTPClientLib.
+
+## [0.5beta] - 2018-03-02
+#### Added
 - [firmware + webui] Embedded web files
 - [firmware + webui] MQTT to main branch.
 - [firmware + webui] Access column to logs for the information, if the access was granted or not @romanzava
@@ -14,12 +41,12 @@ All notable changes to this project will be documented in this file.
 - [dev tools] gulp script for PROGMEM web files.
 
 #### Changed
+- [webui] New look and feel - refactored Web UI
 - [webui] Hardcoded FooTable Add/Edit text
 - [webui] Only support woff glyphicons font
 - [dev tools] Clean and beautify main.cpp @nardev
 - [webui] Minor cosmetic changes
 - [webui] Javascript loading moved to end of the html
-- [webui] index.html for more modern look and feel.
 - [build] more meaningful directories for web files.
 - [webui] RSSI percent calculation
 - [firmware] Limit printScanResult to 5 best (based on RSSI) networks around (esp becomes unresponsive if there are too many networks)
