@@ -1,6 +1,115 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] 2018-11-13
+
+### BREAKING CHANGES (These changes will break your data on device, please make sure made a backup, also you can not use your old settings on this release but only can restore user data)
+
+- [firmware] #189 Flash layout changed to 2MB Firmware / 2MB SPIFFS Data @Pako2
+- [firmware] Support for RDM6300 RFID readers (125kHz, UART) #163 @arduino12 / concurrently by @Pako2
+- [firmware] debug firmware for debugging purposes
+- [tools] executables for tools (no longer need to have node js and gulp for web ui development - **only lightly tested**) 
+- [firmware] LED_BUILTIN lights up while wifi connected and flashes when it waits for wifi @Pako2
+- [webui] IP address choice option in AP mode @Pako2
+- [webui] favicon.ico @Pako2
+- [tools] websocket emulator can now store new configuration temporarly
+
+#### Fixed
+- [firmware] not able to connect MQTT server #157 @fivosg 
+- [firmware] a MQTT message typo #157 @wamboin23 
+- [webui] some breaks on web pages 
+- [webui] usage of !important CSS rule
+- [firmware] #191 relay type inversion @Pako2
+- [firmware] #190 Increase PN532::WaitReady debug level @Pako2
+
+#### Changed
+- [webui] scrollbar on desktop screens (now hidden)
+- [webui] sidebar colors (i hope you like it, standart bootstrap color)
+
+## [0.8.3] 2018-11-11
+#### Fixed
+- [firmware] not able to connect MQTT server #157 @fivosg 
+
+## [0.8.2] 2018-09-05
+#### Added
+- [firmware] log for firmware update #152
+- [webui] Expired access attempts logged as "Expired"
+
+#### Fixed
+- [firmware] validuntil is being ignored #151
+- [firmware] the boot loop when ssid is empty on configuration file (actually more a workaround than a fix) #154 
+
+#### Changed
+- [webui] sanity check for firmware update file #152
+- [firmware] MQTT reconnect code (dirty hack) #149
+
+## [0.8.1] 2018-09-01
+#### Added
+- [firmware] Global websocket message to inform ws clients to toggle relay (upcoming client version will use it)
+- [webui] incremental id for event log
+
+#### Fixed
+- [webui] available flash space calculation
+- [webui] #143 duplicate records on User Data backup
+- [firmware] #140 MQTT Heartbeat
+- [webui] official board's hardware settings did not populate
+
+#### Changed
+- [firmware] do not initialize serial output unless we are debugging
+- [build] slice main.cpp to multiple parts for better readability 
+- [webui] Access Type Active to Always
+- [firmware] more reliable activation of relay
+
+## [0.8.0]
+#### Breaking Changes
+- [firmware] Flash partition is changed to 1+3 !!! You need to backup your settings and users before updating to this version
+- [firmware] For wiegand readers card id's changed hexadecimal to decimal !!! You need to change hexadecimal values to decimal values on your user backup file 
+
+#### Added
+- [build] Optimize code for official board 
+- [firmware] mqtt boot, hearthbeat, access message added
+
+#### Fixed
+- [firmware] #128 Do not retain MQTT publishes
+- [firmware] Compiller warnings fixed 
+
+#### Changed
+- [webui] Default wifi type to AP
+- [firmware] MQTT Messages are now plain JSON encoded texts
+- [build] flash.bat file now asks which firmware to flash
+
+## [0.7.6] - 2018-07-13
+#### Fixed
+- [firmware] #98 WDT Reset
+
+## [0.7.5] - 2018-06-09
+#### Fixed
+- [build] BearSSL dependency error with Platformio
+- [webui] #115 version numbering
+- [firmware] #101 Permanent AP Mode
+
+#### Changed
+- [build] Updated PlatformIO configuration file for next PIO release
+
+## [0.7.4] - 2018-04-28
+#### Fixed
+- [webui] comment out access types
+- [firmware] fix a compile warning
+- [firmware] change startAP behaviour
+- [firmware] publish username to MQTT broker
+- [firmware] mqtt username password memory collusion
+
+#### Removed
+- [firmware] Modified header
+
+## [0.7.3] - 2018-04-04
+#### Added
+- [firmware] More debug messages
+
+#### Fixed
+- [webui] minor fixes suggested by Codacy
+- [webui] get javascript values as real integers
+
 ## [0.7.2] - 2018-04-02
 #### Fixed
 - [webui] MQTT is enabled by default.

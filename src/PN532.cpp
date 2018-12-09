@@ -1,3 +1,4 @@
+#ifndef OFFICIALBOARD
 /**************************************************************************
     @file     PN532.cpp
     @author   Adafruit Industries, Elmü
@@ -656,7 +657,7 @@ bool PN532::WaitReady()
     {
         if (timer >= PN532_TIMEOUT) 
         {
-            Utils::Print("WaitReady() -> TIMEOUT\r\n");
+            if (mu8_DebugLevel > 0) Utils::Print("WaitReady() -> TIMEOUT\r\n");
             return false;
         }
         Utils::DelayMilli(10);
@@ -1019,4 +1020,4 @@ byte PN532::SpiRead(void)
     #endif
 }
 
-
+#endif
