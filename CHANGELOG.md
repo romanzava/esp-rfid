@@ -1,9 +1,214 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.9.1] Unreleased
+- [firmware] fix the loadconfiguration loop
+
+## [0.9.0] 2018-11-13
+
+### BREAKING CHANGES (These changes will break your data on device, please make sure made a backup, also you can not use your old settings on this release but only can restore user data)
+
+- [firmware] #189 Flash layout changed to 2MB Firmware / 2MB SPIFFS Data @Pako2
+- [firmware] Support for RDM6300 RFID readers (125kHz, UART) #163 @arduino12 / concurrently by @Pako2
+- [firmware] debug firmware for debugging purposes
+- [tools] executables for tools (no longer need to have node js and gulp for web ui development - **only lightly tested**) 
+- [firmware] LED_BUILTIN lights up while wifi connected and flashes when it waits for wifi @Pako2
+- [webui] IP address choice option in AP mode @Pako2
+- [webui] favicon.ico @Pako2
+- [tools] websocket emulator can now store new configuration temporarly
+
+#### Fixed
+- [firmware] not able to connect MQTT server #157 @fivosg 
+- [firmware] a MQTT message typo #157 @wamboin23 
+- [webui] some breaks on web pages 
+- [webui] usage of !important CSS rule
+- [firmware] #191 relay type inversion @Pako2
+- [firmware] #190 Increase PN532::WaitReady debug level @Pako2
+
+#### Changed
+- [webui] scrollbar on desktop screens (now hidden)
+- [webui] sidebar colors (i hope you like it, standart bootstrap color)
+
+## [0.8.3] 2018-11-11
+#### Fixed
+- [firmware] not able to connect MQTT server #157 @fivosg 
+
+## [0.8.2] 2018-09-05
+#### Added
+- [firmware] log for firmware update #152
+- [webui] Expired access attempts logged as "Expired"
+
+#### Fixed
+- [firmware] validuntil is being ignored #151
+- [firmware] the boot loop when ssid is empty on configuration file (actually more a workaround than a fix) #154 
+
+#### Changed
+- [webui] sanity check for firmware update file #152
+- [firmware] MQTT reconnect code (dirty hack) #149
+
+## [0.8.1] 2018-09-01
+#### Added
+- [firmware] Global websocket message to inform ws clients to toggle relay (upcoming client version will use it)
+- [webui] incremental id for event log
+
+#### Fixed
+- [webui] available flash space calculation
+- [webui] #143 duplicate records on User Data backup
+- [firmware] #140 MQTT Heartbeat
+- [webui] official board's hardware settings did not populate
+
+#### Changed
+- [firmware] do not initialize serial output unless we are debugging
+- [build] slice main.cpp to multiple parts for better readability 
+- [webui] Access Type Active to Always
+- [firmware] more reliable activation of relay
+
+## [0.8.0]
+#### Breaking Changes
+- [firmware] Flash partition is changed to 1+3 !!! You need to backup your settings and users before updating to this version
+- [firmware] For wiegand readers card id's changed hexadecimal to decimal !!! You need to change hexadecimal values to decimal values on your user backup file 
+
+#### Added
+- [build] Optimize code for official board 
+- [firmware] mqtt boot, hearthbeat, access message added
+
+#### Fixed
+- [firmware] #128 Do not retain MQTT publishes
+- [firmware] Compiller warnings fixed 
+
+#### Changed
+- [webui] Default wifi type to AP
+- [firmware] MQTT Messages are now plain JSON encoded texts
+- [build] flash.bat file now asks which firmware to flash
+
+## [0.7.6] - 2018-07-13
+#### Fixed
+- [firmware] #98 WDT Reset
+
+## [0.7.5] - 2018-06-09
+#### Fixed
+- [build] BearSSL dependency error with Platformio
+- [webui] #115 version numbering
+- [firmware] #101 Permanent AP Mode
+
+#### Changed
+- [build] Updated PlatformIO configuration file for next PIO release
+
+## [0.7.4] - 2018-04-28
+#### Fixed
+- [webui] comment out access types
+- [firmware] fix a compile warning
+- [firmware] change startAP behaviour
+- [firmware] publish username to MQTT broker
+- [firmware] mqtt username password memory collusion
+
+#### Removed
+- [firmware] Modified header
+
+## [0.7.3] - 2018-04-04
+#### Added
+- [firmware] More debug messages
+
+#### Fixed
+- [webui] minor fixes suggested by Codacy
+- [webui] get javascript values as real integers
+
+## [0.7.2] - 2018-04-02
+#### Fixed
+- [webui] MQTT is enabled by default.
+
+## [0.7.1] - 2018-03-30
+#### Added
+- [firmware] + [webui] Option to use static IP address #89 @nbaglietto
+- [firmware] + [webui] Option to hide SSID on AP Mode #89 @nbaglietto
+- [webui] Auto focus on login password #94 @pidiet
+- [firmware] event log for MQTT
+
+#### Fixed
+- [webui] We were checking wrongly if the browser has previously had authentication over /login.
+- [webui] MQTT listed disabled even if it is enabled #92 @pidiet
+
+## [0.7.0] - 2018-03-23
+#### Added
+- [firmware] !!! BREAKING CHANGE !!! 2 MB Flash 2 MB SPIFFS size for future proof firmware updates plase make sure you made a backup before updating to this version. You need to format SPIFFS.
+- [firmware] Experimental PN532 RFID Reader Support
+- [webui] Try to connect button upon inprogress complete.
+- [webui] Restart without saving changes.
+- [firmware] Staging framework for platformio
+
+#### Changed
+- [webui] Sign in panel now integrated into index.html
+- [firmware] Reduced serial outputs.
+- [firmware] Switched to Async MQTT Library, needs testing.
+
+#### Fixed
+- [firmware] Logs causing Exception 9 because we are delaying async function with NTP sync by WiFi.hostbyname
+- [webui] wrong version is shown #80.
+- [webui] whole html was shifted with previous css change.
+
+#### Removed
+- [firmware] Factory reset via pin
+
+## [0.6.1] - 2018-03-14
+#### Added
+- [firmware] ICACHE_FLASH_ATTR and ICACHE_RAM_ATTR decorators (did not feel any difference in terms of speed, keeping it anyway).
+- [dev tools] Web UI Demo https://bitadvise.com/esp-rfid/
+- [dev tools] Websocket emulator access log
+
+#### Changed
+- [webui] Always show sidebar on big screens
+- [webui] Better versioning.
+
+#### Fixed
+- [build] Platformio bug
+
+## [0.6] - 2018-03-11
+#### Added
+- [firmware] Restart ESP if softAP fails.
+- [webui] Colorize access log based on result.
+
+#### Fixed
+- [webui] progress bar for factory reset, update, save settings does not initiated correctly.
+- [webui] BSSID is missing when first scan.
+- [webui] Now firmware internally holds only unix time, made changes on webui to cover that.
+
+#### Changed
+- [webui] Completely refactored html loading, we are getting all files at first login, then no request is made to web server which greatly simplifies some functions.
+- [webui] + [firmware] Completely refactored Latest Access Log, it's now unlimited Access Log which holds every picc scan. This should fix #60 (at least there is clear log button :) ).
+- [webui] Event log table now displays firmware time for early events.
+- [webui] before fetching data wait sidebar to dismiss for smooth animation.
+- [webui] fade in web content.
+- [firmware] Log login remote IP address.
+
+## [0.5.4] - 2018-03-09
+#### Added
+- [webui] colorize event logs based on severity.
+- [webui] progress bar on saving settings.
+- [dev tools] event log for websocket emulator
+
+#### Fixed
+- [firmware] Fix #75 Scan of wifi returns more columns of the same wifi.
+- [webui] Fix #74 #33 completely New user with incorrect validity.
+- [webui] New user with incorrect date.
+- [webui] Editing user results non parsed values.
+
+#### Changed
+- [webui] event table breakpoints.
+
+## [0.5.3] - 2018-03-08
+#### Added
+- [webui] Firmware Update is now live with latest version check on GitHub.
+
+#### Fixed
+- [firmware] Update was possible with an unauthorized HTTP Post.
+
+## [0.5hotfix2] - 2018-03-07
 #### Added
 - [webui] Factory reset within Web UI.
+- [webui] + [firmware] Event logging is now live.
+
+#### Fixed
+- [firmware] Can not with default password login on fresh setup.
 
 #### Changed
 - [webui] Changes suggested from Codacy.
